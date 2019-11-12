@@ -1,0 +1,170 @@
+\documentclass[10pt, a4paper]{article}
+\usepackage{lrec}
+\usepackage{multibib}
+\newcites{languageresource}{Language Resources}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{soul}
+% for eps graphics
+
+\usepackage{epstopdf}
+\usepackage[latin1]{inputenc}
+
+\usepackage{hyperref}
+\usepackage{xstring}
+
+\newcommand{\secref}[1]{\StrSubstitute{\getrefnumber{#1}}{.}{ }}
+
+\title{Developing New Linguistic Resources and Tools for the Galician Language\vspace*{.5\baselineskip} }
+
+\name{Rodrigo Agerri $\textsuperscript{*}$, Xavier G\'omez Guinovart $\textsuperscript{**}$, German Rigau $\textsuperscript{*}$, Miguel Anxo Solla Portela $\textsuperscript{**}$}
+
+\address{$\textsuperscript{*}$ IXA NLP Group, University of the Basque Country UPV/EHU {\small $|$}
+         $\textsuperscript{**}$ TALG Research Group, University of Vigo \\
+         rodrigo.agerri@ehu.eus, xgg@uvigo.es, german.rigau@ehu.eus,  miguelsolla@uvigo.es\\}
+
+
+\abstract{
+In this paper we describe the work towards developing new resources and Natural Language Processing (NLP) tools for the Galician language. First, a new corpus, manually revised, for POS tagging and lemmatization is described. Second, we present a new manually annotated corpus for Named Entity tagging for Galician. Third, we train and develop new NLP tools for Galician, including the first publicly available Galician statistical modules for lemmatization and Named Entity Recognition, and new modules for POS tagging, Wikification and Named Entity Disambiguation. Finally, we also present two new Web demo applications to easily test the new set of tools online.\\ \newline \Keywords{Galician, Less-resourced languages, Language Resources, Linguistic Tools} }
+
+\begin{document}
+
+\maketitleabstract
+
+\section{Introduction}\label{sec:introduction}
+
+We present new developments on linguistic resources and Natural Language Processing tools for the Galician language. There are previous works addressing the creation of resources to allow the automatic processing of the Galician language, including the Galician WordNet \cite{galnet}, the Galician SemCor \cite{sensogal}, works on terminology \cite{termonet} or annotation of large corpora \cite{LM09}. Furthermore, there are also publicly available Natural Language Processing tools for the Galician language, notably Freeling \cite{freeling3_padro12} and Linguakit \cite{gamallo2017linguakit}. However, it is remarkable the lack of linguistic processors that are available for other less-resourced languages, such as statistical tools for lemmatization or Named Entity Recognition.
+
+In this work we aim to contribute to the development of NLP resources for Galician by providing a new manually revised corpus for POS tagging and lemmatization, and a new manually annotated corpus for Named Entity Recognition. This would allow us to train previous unavailable statistical tools for the processing of Galician texts. As a result of our effort, seven new linguistic processors for Galician are presented: a rule-based tokenizer and statistical tools for POS tagging, lemmatization, Named Entity Recognition, Named Entity Disambiguation, Wikification and graph-based Word Sense Disambiguation. In particular, this paper presents the first open source statistical lemmatizer and Named Entity tagger for the Galician language.
+
+\section{Corpora and Lexical Resources}\label{sec:corpora-dictionaries}
+
+In this paper the main work on corpora and lexical resources was undertaken in order to create new resources to train a statistical POS tagger and lemmatizer, and a new Named Entity Recognition and Classification tagger. The basis for the corpora required is the CTG Galician Technical Corpus\footnote{\url{http://sli.uvigo.gal/CTG/}} \citelanguageresource{ctg}. The CTG corpus contains around 18 million words from various domains:
+
+\begin{itemize}
+\item GALEX Galician legal texts ($\sim$3M words).
+\item XIGA Galician texts on computing and telecommunications ($\sim$3M words).
+\item AUGA Galician texts on ecology and environmental sciences ($\sim$3M words).
+\item ACHEGA Galician economy texts ($\sim$2M words).
+\item SOGAL Galician texts on sociology and social sciences ($\sim$3M words).
+\item MEDIGAL Galician texts on medicine ($\sim$4M words).
+\end{itemize}
+
+In order to provide the required resources to train a POS tagger and lemmatizer for Galician, we manually revised a subset of the CTG corpus containing 2,852,472 tokens, 105,986 sentences and 938 texts (from scientific-technical communications, academic works and news from ecology and environmental sciences, and legal texts). Apart from the annotated corpora, two dictionaries to perform dictionary-based lemmatization and multiword recognition were built from several sources:
+
+\begin{itemize}
+\item Dicionario da Real Academia Galega\footnote{\url{http://academia.gal/dicionario/}}.
+\item Vocabulario ortogr\'afico da lingua galega (VOLGa)\footnote{\url{http://www.realacademiagalega.org/recursos-volg}}.
+\item Hunspell Spellchecker for Galician\footnote{\url{https://github.com/meixome/hunspell-gl}}.
+\item Galician dictionary distributed by Apertium\footnote{\url{http://sourceforge.net/projects/apertium/}}.
+\item Galician dictionary distributed by Freeling\footnote{\url{http://nlp.lsi.upc.edu/freeling/}}.
+\item Other textual and lexical resources developed by the TALG research group.
+\end{itemize}
+
+The collection of part-of-speech tags used in the CTG subset corpus and dictionaries are based on the CTAG tagset developed by the TALG Group \cite{LM09}. The subset used for training the POS tagger contains around 200 morphological tags and 23K different lemmas. For training and testing, we created three splits following the Penn Treebank as model. Thus, we took the first 950K tokens for training, the following 150K for development and the next 150K for test.
+
+Finally, a new corpus for Named Entity Recognition in Galician \citelanguageresource{sli-nerc} was manually annotated on a subsection of the CTG corpus consisting of 202,334 tokens in 8,137 sentences (from the news and ecology and environmental sciences domains). The CoNLL guidelines for annotation were followed \cite{tjong_kim_sang_introduction_2003}. This resulted in an inventory of 4 named entity classes distributed as follows: 1,293 persons (PER), 3,183 organizations (ORG), 2,616 locations (LOC) and 1,375 miscellaneous entities (MISC). From this corpus 162K tokens are used for training and 41K for test.
+
+\section{NLP Tools}\label{sec:processing-tools}
+
+In order to develop new linguistic processors using the resources described in the previous section, we decided to try the IXA pipes tools\footnote{\url{http://ixa2.si.ehu.es/ixa-pipes}} \cite{ixa-pipeline}. The aim of IXA pipes is to provide a modular set of ready to use Natural Language Processing (NLP) tools. Apart from being easy to train and deploy, they are also a good fit for our current aim of providing new tools for Galician because every module but the tokenizer is machine learning based. In fact, IXA pipes tries to use the same approach across NLP tasks in order to create robust processors both across domains and languages. This strategy has proven to be very successful for Named Entity Recognition and Classification (NER) \cite{agerri2016robust} and Opinion Target Extraction (OTE) \cite{S15-2127} benchmarks, both in out-of-domain and in-domain evaluations.
+
+\subsection{Semi-supervised approach}\label{sec:semi-superv-appr}
+
+IXA pipes learns supervised models based on the Perceptron algorithm \cite{collins_discriminative_2002}. To avoid duplication of efforts, IXA pipes uses the Apache OpenNLP project implementation\footnote{\url{http://opennlp.apache.org/}} customized with its own features. By design, IXA pipes tools aim to establish a simple and shallow feature set, avoiding any linguistic motivated features, with the objective of removing any reliance on costly extra gold annotations apart from the target task (POS, lemmas, NER) and/or cascading errors if automatic language processors are used. IXA pipes modules consist of: (i) Local, shallow features based mostly on orthographic, word shape and n-gram features plus their context; and (ii) three types of simple clustering features, based on unigram matching. Specifically, IXA pipes implements, on top of the local features, a combination of three word representation features: (i) Brown \cite{brown1992class} clusters, taking the 4th, 8th, 12th and 20th node in the path; (ii) Clark \cite{clark2003combining} clusters and, (iii) Word2vec \cite{mikolov2013distributed} clusters, based on K-means applied over the extracted word vectors using the skip-gram algorithm. The implementation of the clustering features looks for the cluster class of the incoming token in one or more of the clustering lexicons induced following the three methods listed above. If found, then we add the class as a feature. The Brown clusters only apply to the token related features, which are duplicated. The word representation features are \emph{combined} and \emph{stacked} from features induced over different data sources. For this work the new Galician POS tagger, lemmatizer and NER tagger are based on this design.
+
+Furthermore, IXA pipes are extended with third-party tools for those type of annotations not developed within its toolchain. Most notably, it includes integration of wikification and Named Entity Disambiguation (NED) via DBPedia Spotlight \cite{isem2011mendesetal} as well as graph-based Word Sense Disambiguation \cite{Agirre:2014:RWK:2645242.2645245}.
+
+Summarizing, the new set of NLP tools for Galician implemented within IXA pipes consists of the following modules:
+
+\begin{itemize}
+\item ixa-pipe-tok: A rule-based tokenizer and sentence segmenter.
+\item ixa-pipe-pos: A statistical lemmatizer and POS tagger (ixa-pipe-pos); ixa-pipe-pos is complemented by the dictionaries described in the previous section for dictionary-based lemmatization and multiword detection. For efficiency, these dictionaries are deployed as finite state automata based on Morfologik\footnote{\url{https://github.com/morfologik/}}.
+\item ixa-pipe-nerc: A state of the art NER tagger.
+\item ixa-pipe-wikify: Wikification tool based on DBpedia Spotlight.
+\item ixa-pipe-ned: A NED tool based on DBpedia Spotlight. The NED uses the entities spotted by ixa-pipe-nerc as input to perform the disambiguation.
+\item ukb-naf: UKB graph-based Word Sense Disambiguation.
+\end{itemize}
+
+\subsection{Named Entity Disambiguation and Wikification}\label{sec:named-entity-disamb}
+
+Galician language already had a previous version of the DBpedia Spotlight\footnote{\url{http://sli.uvigo.gal/dbpedia/spotlight/}} that was implemented together with the official server of the Galician DBpedia \cite{DBLP:journals/pdln/PortelaG16}, but it used the Lucene version \cite{isem2011mendesetal}. A new, better performing, generative model \cite{isem2013daiber} for DBpedia Spotlight has been created by configuring the Galician language in model-quickstarter\footnote{\url{https://github.com/dbpedia-spotlight/model-quickstarter}} in order to handle Wikification and Named Entity Disambiguation with IXA pipes, using the modules already available for other languages.
+
+\subsection{Web demo}\label{sec:web-demo}
+
+The full new set NLP tools provided by the IXA pipes for the Galician language can be easily tested through the \emph{Lingaliza} Web application\footnote{\url{http://sli.uvigo.gal/lingaliza/}} developed by the TALG Research Group of the University of Vigo. Furthermore, \emph{DContado} \footnote{\url{http://sli.uvigo.gal/dcontado/}}, the user-oriented version of Lingaliza, is designed to be used in the field of Digital Humanities for Research in Humanities and Social Sciences under the auspices of the European infrastructure CLARIN\footnote{\url{http://clarin.eu}}  \cite{DBLP:journals/pdln/BelGI16}.
+
+\section{Experimental Results}\label{sec:experimental-results}
+
+In this section we will report on results for the POS tagger and Named Entity Recognition taggers trained on the CTG corpora as described in section \ref{sec:corpora-dictionaries} The aim of this section is to give us a first idea of the performance of these tools for Galician. In order to train our systems with the semi-supervised approach described in section \ref{sec:semi-superv-appr}, first the three types of word representations needed to be induced from large unlabelled data. The first obvious candidate was to use the Galician Wikipedia. However, as shown by previous experiments using this approach \cite{agerri2016robust}, it is convenient for best performance to provide word representation features induced from different data sources. In order to do that we compiled a \emph{large corpus} from various domains by crawling data from the following Web data sources:
+
+\begin{itemize}
+\item Asociaci\'on para a Defensa Ecol\'oxica de Galiza (ADEGA) (http://adega.gal).
+\item The Galician Political Party, \emph{Bloque Nacionalista Galego} (BNG) (http://www.bng.gal/).
+\item Galician newspaper \emph{Praza P\'ublica} (http://praza.gal/).
+\item Galician weekly and newspaper \emph{Sermos Galiza} (http://www.sermosgaliza.gal/).
+\item Galician government official website: \emph{Xunta de Galiza} (http://www.xunta.gal).
+\end{itemize}
+
+Roughly speaking, the text used from the Galician wikipedia to train the clusters contained 31M words, whereas the \emph{large corpus} compiled contained around 20M words (see \cite{agerri2016robust} for details on the clusters training process). For POS tagging we choose our best feature configurations on the development set whereas for NERC we did our development via 5-fold cross validation. The NER results reported in Table \ref{tab:nerresults} confirm the behaviour of \emph{ixa-pipe-nerc} previously observed in \cite{agerri2016robust} for other languages. The local features are improved substantially by the clustering features. At the same time, the combination of those features provide the best results.
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}[ht]{lccc} \hline
+    Features & P & R & F1 \\ \hline \hline
+    Local & 79.95 & 81.93 & 80.93 \\
+    Local + BL2000 & 82.34 & 83.65 & 82.99 \\
+    Local + CW300 & 82.32 & 83.21 & 82.76 \\
+    Local + W2VW100 & 81.83 & 84.22 & 83.01 \\
+    Local + BL2000 + CW300 & 83.85 & 84.54 & 84.19 \\ \hline
+  \end{tabular}
+  \caption{NER results. BL2000: Brown 2000 classes from Large corpus; CW300: Clark 300 classes from Wikipedia, and W2V100: Word2vec 100 classes from Wikipedia.}
+\label{tab:nerresults}
+\end{table}
+
+Table \ref{tab:posresults} reports on the results of POS tagging. As it is known from previous approaches using distributional semantic features for POS tagging, the gains obtained from using word representations for this task as not as large as those obtained for NER. At least if we look at word accuracy (WA) only. However, by looking at the sentence accuracy (SA) and unknown accuracy (UA) scores it can be seen the clear improvements in performance from the local features to the models using clustering features on top of the local ones. The UA scores in particular are quite interesting as it show that, despite the negligible improvements in terms of WA, the models containing clustering features are much more robust to tag unseen words.
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}[ht]{lcccc} \hline
+    Features & SA & UA & WA \\ \hline \hline
+    Local & 72.08 & 80.09 & 98.31 \\
+    Local + BW1000 & 70.83 & 81.14 & 98.24 \\
+    Local + CW300 & 74.41 & 83.94 & 98.50 \\
+    Local + W2VW100 & 71.93 & 81.45 & 98.30 \\
+    Local + CW300 + CL400 & 75.22 & 85.35 & 98.54 \\ \hline
+  \end{tabular}
+  \caption{POS results. SA: Sentence Accuracy; UA: unknown accuracy; WA: word accuracy.}
+\label{tab:posresults}
+\end{table}
+
+\section{Related Work}\label{sec:related-work}
+
+Previous work on NLP for Galician have been centred around Freeling \cite{freeling3_padro12} and Linguakit \cite{gamallo2017linguakit}. Freeling provides wide support for several languages, however, it does not yet include machine learning based lemmatization or Named Entity Recognition and Classification for Galician. Current support includes tokenization, POS tagging, and rule-based lemmatization and detection (no classification) of named entities.
+
+With respect to Linguakit, it provides applications for Galician such as a verb conjugator, a POS tagger, dependency parser, Named Entity tagger, sentiment analyzer, a keyword extractor and a summarization module. Lemmatization, Named Entity tagging and parsing are performed by language independent rule-based modules.
+
+\section{Conclusions and future work}
+
+In this paper we presented a new set of linguistic resources and NLP tools for the Galician language. In particular, we would like to highlight the contribution of two new manually revised and annotated corpora for Galician POS tagging, lemmatization and Named Entity Recognition (NER). Furthermore, this paper has presented a number of novel statistical NLP tools for the Galician language, including a lemmatizer, a NER tagger, and a wikification and NED module. Additionally, the reported results indicate that the performance obtained is similar to performance of those tasks for other languages which is promising start \cite{agerri2016robust}, although more experiments remain to be done.
+
+With respect to future work, we believe that establishing a clear benchmarking between the different tools for Galician NLP would be very interesting. In this way, and apart from providing an objective comparison, it would be possible to learn what are the strengths and weaknesses of each toolchain currently available for Galician. Additionally, we would like to keep extending the coverage of NLP tools for Galician. For example, IXA pipes provides modules for statistical chunking and constituent parsing, which have been already deployed for Basque, English and Spanish.
+
+The code for every tool presented in this paper is already available for public use through the IXA pipes website. In the same way, every trained model\footnote{\url{http://ixa2.si.ehu.es/ixa-pipes/}} and associated linguistic resources are freely available\footnote{\url{http://sli.uvigo.gal/download/SLI_Galician_Corpora/}}. Furthermore, these tools and models can be tested using the two Web implementations developed by the TALG Research Group of the University of Vigo.
+
+\section{Acknowledgements}
+
+This research has been carried out thanks to the project TUNER (TIN2015-65308-C5-1-R) supported by the Ministry of Economy and Competitiveness of the Spanish Government and the European Fund for Regional Development (MINECO/FEDER).
+
+
+\section{Bibliographical References}\label{main:ref}
+
+\bibliographystyle{lrec}
+\bibliography{references}
+
+
+\section{Language Resource References}\label{lr:ref}
+\bibliographystylelanguageresource{lrec}
+\bibliographylanguageresource{references}
+
+\end{document}
